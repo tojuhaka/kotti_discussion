@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xml:lang="en"
+      xmlns:tal="http://xml.zope.org/namespaces/tal"
+      metal:use-macro="api.macro('kotti:templates/view/master.pt')">
+
+  <head tal:omit-tag="" metal:fill-slot="head-more">
+    <link rel="stylesheet" href="${request.static_url('kotti_discussion:static/style.css')}" type="text/css" />
+    <more tal:omit-tag="" metal:define-slot="head"></more>
+  </head>
+
+
+  <div metal:fill-slot="content" class="content">
+
+    <h1>${api.context.title}</h1>
+
+    <tal:comments repeat="comment api.context.comments"> 
+
+            <i> admin wrote 1.4.2013: </i>
+        <div class="well">
+            <p tal:content="comment.message" />
+        </div>
+    
+    </tal:comments>
+
+  <div tal:condition="form">
+        ${structure: form}
+    </div>
+
+  </div>
+</html>
