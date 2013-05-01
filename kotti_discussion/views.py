@@ -7,6 +7,7 @@ from kotti.views.edit import EditFormView
 from kotti.views.util import template_api
 
 from kotti_discussion import _
+from kotti_discussion.utils import get_avatar_image
 from kotti_discussion.resources import Discussion, Comment
 
 from deform import Button
@@ -30,7 +31,8 @@ class DiscussionEditForm(EditFormView):
 
 class CommentSchema(ContentSchema):
     message = colander.SchemaNode(colander.String(),
-                                       widget=TextAreaWidget(cols=40, rows=5))
+                                  widget=TextAreaWidget(cols=40, rows=5))
+
 
 class CommentAddForm(AddFormView):
     schema_factory = CommentSchema
@@ -42,12 +44,14 @@ class CommentEditForm(EditFormView):
     schema_factory = CommentSchema
 
 
+class MessageSchema(colander.MappingSchema):
+    message = colander.SchemaNode(colander.String(),
+                                  widget=TextAreaWidget(cols=200, rows=5),
+                                  title=_("Message"))
+
+
 def view_discussion(context, request):
-    class MessageSchema(colander.MappingSchema):
-
-        message = colander.SchemaNode(colander.String(),
-            widget=TextAreaWidget(cols=200, rows=5), title=_("Message"))
-
+    """ Discussion view for comments """
     schema = MessageSchema()
     form = Form(schema, buttons=[Button('submit', _('Send message'))])
     rendered_form = None
@@ -74,6 +78,7 @@ def view_discussion(context, request):
         'form': rendered_form,
         'api': template_api(context, request),  # this bounds context and request variables to the api in the template
         'example_text': context.example_text,  # this can be called directly in the template as example_text
+        'gravatar_url': get_avatar_image('tojuhaka@gmail.com')
     }
 
 
@@ -109,9 +114,13 @@ def includeme_edit(config):
         renderer='kotti:templates/edit/node.pt',
     )
 
+from pyramid.view import view_config
+@view_config(name='test_view',
+                     renderer='templates/test_view.pt')
+def test_view(context, request):
+    return dict(parent=None)
 
 def includeme_view(config):
-
     config.add_view(
         view_discussion,
         context=Discussion,
@@ -126,3 +135,7 @@ def includeme_view(config):
 def includeme(config):
     includeme_edit(config)
     includeme_view(config)
+
+    from kotti.views.slots import assign_slot
+    config.scan(__name__)
+    assign_slot('test_view', 'belowcontent')
