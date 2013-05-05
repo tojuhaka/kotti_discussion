@@ -5,3 +5,9 @@ class IDiscussion(Interface):
 
 class IComment(Interface):
     """ Marker interface for comment inside Discussion """
+
+class ICommentable(Interface):
+    """ Adds comments to comment """
+
+
+

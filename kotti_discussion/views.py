@@ -8,7 +8,9 @@ from kotti.views.util import template_api
 
 from kotti_discussion import _
 from kotti_discussion.utils import get_avatar_image
+from kotti_discussion.interfaces import ICommentable, IDiscussion
 from kotti_discussion.resources import Discussion, Comment
+from kotti_discussion.adapters import CommentableDiscussion
 
 from deform import Button
 from deform import Form
@@ -114,11 +116,21 @@ def includeme_edit(config):
         renderer='kotti:templates/edit/node.pt',
     )
 
+### TODO: REMOVE TEST VIEW
 from pyramid.view import view_config
 @view_config(name='test_view',
-                     renderer='templates/test_view.pt')
-def test_view(context, request):
-    return dict(parent=None)
+                     renderer='templates/view_comments.pt')
+def view_comments(context, request):
+    adapter = request.registry.queryAdapter(context['discussion'], ICommentable)
+    comments = []
+    try:
+        comments = adapter.get_comments()
+    except AttributeError:
+        pass
+
+    return {
+        'comments': adapter.get_comments()
+    }
 
 def includeme_view(config):
     config.add_view(
@@ -132,9 +144,11 @@ def includeme_view(config):
     config.add_static_view('static-kotti_discussion', 'kotti_discussion:static')
 
 
+
 def includeme(config):
     includeme_edit(config)
     includeme_view(config)
+    config.registry.registerAdapter(CommentableDiscussion, (IDiscussion,), ICommentable)
 
     from kotti.views.slots import assign_slot
     config.scan(__name__)

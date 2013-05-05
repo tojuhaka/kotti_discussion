@@ -1,6 +1,6 @@
 from kotti.resources import Content
 from zope.interface import implements
-from kotti_discussion.interfaces import IDiscussion, IComment
+from kotti_discussion.interfaces import IDiscussion, IComment, ICommentable
 
 from sqlalchemy import Column
 from sqlalchemy import ForeignKey
@@ -13,7 +13,7 @@ from kotti.interfaces import IDefaultWorkflow
 
 class Discussion(Content):
     """This is your content type."""
-    implements(IDiscussion, IDefaultWorkflow)
+    implements(IDiscussion, IDefaultWorkflow, ICommentable)
 
     # add your columns
     id = Column(Integer, ForeignKey('contents.id'), primary_key=True)
@@ -24,7 +24,7 @@ class Discussion(Content):
         name=u'Discussion',
         title=_(u'Discussion'),
         add_view=u'add_discussion',
-        addable_to=[u'Document'],
+        addable_to=[u''],
         )
 
     # adjust the __init__ method according to your columns
