@@ -3,6 +3,7 @@ from zope.interface import implements
 from kotti_discussion.interfaces import IDiscussion, IComment, ICommentable
 
 from sqlalchemy import Column
+from sqlalchemy import UnicodeText
 from sqlalchemy import ForeignKey
 from sqlalchemy import Integer
 from sqlalchemy import Unicode
@@ -17,7 +18,7 @@ class Discussion(Content):
 
     # add your columns
     id = Column(Integer, ForeignKey('contents.id'), primary_key=True)
-    example_text = Column('example_text', Unicode(256))
+    body = Column(UnicodeText())
 
     # change the type info to your needs
     type_info = Content.type_info.copy(
@@ -28,13 +29,10 @@ class Discussion(Content):
         )
 
     # adjust the __init__ method according to your columns
-    def __init__(self, example_text=u'', **kwargs):
+    def __init__(self, body=u'', **kwargs):
         super(Discussion, self).__init__(**kwargs)
-        self.example_text = example_text
+        self.body = body
 
-    @property
-    def comments(self):
-        return [self[i] for i in self]
 
 class Comment(Content):
     """This is your content type."""

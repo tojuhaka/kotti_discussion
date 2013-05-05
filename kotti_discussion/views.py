@@ -6,19 +6,22 @@ from kotti.views.edit import ContentSchema
 from kotti.views.edit import EditFormView
 from kotti.views.util import template_api
 
+from kotti.interfaces import IDocument
+
 from kotti_discussion import _
 from kotti_discussion.utils import get_avatar_image
 from kotti_discussion.interfaces import ICommentable, IDiscussion
 from kotti_discussion.resources import Discussion, Comment
-from kotti_discussion.adapters import CommentableDiscussion
+from kotti_discussion.adapters import CommentableDiscussion, CommentableDocument
 
 from deform import Button
 from deform import Form
 from deform.widget import TextAreaWidget
+from pyramid.view import view_config
 
 
 class DiscussionSchema(ContentSchema):
-    example_text = colander.SchemaNode(colander.String())
+    body = colander.SchemaNode(colander.String())
 
 
 class DiscussionAddForm(AddFormView):
@@ -52,8 +55,10 @@ class MessageSchema(colander.MappingSchema):
                                   title=_("Message"))
 
 
-def view_discussion(context, request):
-    """ Discussion view for comments """
+@view_config(name='view_comments',
+                     renderer='templates/view_comments.pt')
+def view_comments(context, request):
+    """ View for comments """
     schema = MessageSchema()
     form = Form(schema, buttons=[Button('submit', _('Send message'))])
     rendered_form = None
@@ -76,12 +81,24 @@ def view_discussion(context, request):
 
     rendered_form = form.render()
 
+    adapter = request.registry.queryAdapter(context, ICommentable)
+    comments = []
+    try:
+        comments = adapter.get_comments()
+    except AttributeError:
+        pass
+
     return {
+        'comments': comments,
         'form': rendered_form,
         'api': template_api(context, request),  # this bounds context and request variables to the api in the template
-        'example_text': context.example_text,  # this can be called directly in the template as example_text
+        'body': context.body,  # this can be called directly in the template as example_text
         'gravatar_url': get_avatar_image('tojuhaka@gmail.com')
     }
+
+
+def view_discussion(context, request):
+    return dict()
 
 
 def includeme_edit(config):
@@ -116,21 +133,6 @@ def includeme_edit(config):
         renderer='kotti:templates/edit/node.pt',
     )
 
-### TODO: REMOVE TEST VIEW
-from pyramid.view import view_config
-@view_config(name='test_view',
-                     renderer='templates/view_comments.pt')
-def view_comments(context, request):
-    adapter = request.registry.queryAdapter(context['discussion'], ICommentable)
-    comments = []
-    try:
-        comments = adapter.get_comments()
-    except AttributeError:
-        pass
-
-    return {
-        'comments': adapter.get_comments()
-    }
 
 def includeme_view(config):
     config.add_view(
@@ -148,8 +150,11 @@ def includeme_view(config):
 def includeme(config):
     includeme_edit(config)
     includeme_view(config)
+
+    # TODO: USE MULTI ADAPTER
+    config.registry.registerAdapter(CommentableDocument, (IDocument,), ICommentable)
     config.registry.registerAdapter(CommentableDiscussion, (IDiscussion,), ICommentable)
 
     from kotti.views.slots import assign_slot
     config.scan(__name__)
-    assign_slot('test_view', 'belowcontent')
+    assign_slot('view_comments', 'belowcontent')

@@ -16,9 +16,9 @@ class TestContentView(FunctionalTestBase):
     def test_content_view(self):
         root = get_root()
         root['content-type'] = ContentType(title=u'New Content Type',
-                                           example_text=u'some text')
+                                           body=u'some text')
         result = view_content_type(root['content-type'], DummyRequest())
-        assert result[u'example_text'] == u'some text'
+        assert result[u'body'] == u'some text'
 
     def test_browser_call(self):
         browser = self.login_testbrowser()

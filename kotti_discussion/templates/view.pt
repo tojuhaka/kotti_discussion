@@ -12,28 +12,15 @@
 
   <div metal:fill-slot="content" class="content">
 
-    <div class="page-header">
-      <h1>${api.context.title}</h1>
+
+  <article metal:fill-slot="content" class="document-view content">
+    <h1>${context.title}</h1>
+    <p class="description">
+      ${context.description}
+    </p>
+    <div tal:replace="api.render_template('kotti:templates/view/tags.pt')" />
+    <div class="body" tal:content="structure context.body | None">
     </div>
+  </article>
 
-    <div id="discussion_view">
-
-      <tal:comments repeat="comment api.context.comments"> 
-        <div class="row">
-            <div class="span1">
-              <img src="${gravatar_url}"/>
-            </div>
-            <div class="span4">
-              <a href="#">Admin</a>
-              <p tal:content="comment.message" />
-            </div>
-        </div>
-        </tal:comments>
-
-      <div tal:condition="form">
-            ${structure: form}
-      </div>
-    </div>
-
-  </div>
 </html>

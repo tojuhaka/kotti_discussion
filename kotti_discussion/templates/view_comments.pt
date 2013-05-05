@@ -1,3 +1,18 @@
-<p>
-${comments}
-</p>
+    <div id="comments_view">
+      <tal:comments repeat="comment comments"> 
+        <div class="row">
+            <div class="span1">
+              <img src="${gravatar_url}"/>
+            </div>
+            <div class="span4">
+              <a href="#">Admin</a>
+              <p tal:content="comment.message" />
+            </div>
+        </div>
+        </tal:comments>
+
+      <div tal:condition="form">
+            ${structure: form}
+      </div>
+    </div>
+
