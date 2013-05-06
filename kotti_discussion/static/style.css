@@ -3,3 +3,15 @@
 h1, h2, h3 {
   text-shadow: 4px 4px 2px #ccc;
 }
+
+#kotti_discussion-message_form label.control-label {
+  display: none;
+}
+
+#discussion {
+  margin-top: 1em;
+}
+#discussion div.comment {
+  margin-left: 0;
+} 
+

@@ -6,4 +6,5 @@ from fanstatic import Resource
 
 library = Library("kotti_discussion", "static")
 kotti_discussion_css = Resource(library, "style.css")
-kotti_discussion_group = Group([kotti_discussion_css])
+kotti_discussion_js = Resource(library, "textarea.js")
+kotti_discussion_group = Group([kotti_discussion_css, kotti_discussion_js])

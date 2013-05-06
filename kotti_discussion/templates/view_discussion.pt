@@ -3,22 +3,33 @@
       xml:lang="en"
       xmlns:tal="http://xml.zope.org/namespaces/tal">
 
-
+    <!--<head>-->
+        <!--<link rel="stylesheet" href="${request.static_url('kotti_discussion:static/style.css')}" type="text/css" />-->
+        <!--<link rel="stylesheet" href="${request.static_url('kotti_discussion:static/textarea.js')}" type="text/javascript" />-->
+    <!--</head>-->
+  <div tal:condition="comments">
     <div id="discussion">
       <tal:comments repeat="comment comments"> 
         <div class="row">
             <div class="span1">
               <img src="${gravatar_url}"/>
             </div>
-            <div class="span4">
+            <div class="comment span10">
               <a href="#">Admin</a>
               <p tal:content="comment.message" />
             </div>
         </div>
         </tal:comments>
-
-      <div tal:condition="form">
-            ${structure: form}
+    </div>
+    <div id="kotti_discussion-message_form" tal:condition="form">
+        <div class="row">
+            <div class="span1">
+              <img src="${gravatar_url}"/>
+            </div>
+            <div class="span10">
+                ${structure: form}
+            </div>
+        </div>
       </div>
     </div>
 </html>

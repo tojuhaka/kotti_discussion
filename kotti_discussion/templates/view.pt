@@ -6,6 +6,7 @@
 
   <head tal:omit-tag="" metal:fill-slot="head-more">
     <link rel="stylesheet" href="${request.static_url('kotti_discussion:static/style.css')}" type="text/css" />
+    <link rel="stylesheet" href="${request.static_url('kotti_discussion:static/textarea.js')}" type="text/javascript" />
     <more tal:omit-tag="" metal:define-slot="head"></more>
   </head>
 

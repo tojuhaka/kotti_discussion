@@ -1,18 +1,23 @@
 import colander
-import datetime
 
 from kotti.views.edit import AddFormView
 from kotti.views.edit import ContentSchema
 from kotti.views.edit import EditFormView
 from kotti.views.util import template_api
+from kotti.resources import Document
 
 from kotti.interfaces import IDocument
 
 from kotti_discussion import _
 from kotti_discussion.utils import get_avatar_image
-from kotti_discussion.interfaces import ICommentable, IDiscussion
-from kotti_discussion.resources import Discussion, Comment
-from kotti_discussion.adapters import CommentableDiscussion, CommentableDocument
+from kotti_discussion.interfaces import ICommentable
+from kotti_discussion.resources import Comment
+from kotti_discussion.adapters import CommentableDocument
+
+from kotti_discussion.utils import (
+    create_comment_inside,
+    get_discussion
+)
 
 from deform import Button
 from deform import Form
@@ -20,23 +25,25 @@ from deform.widget import TextAreaWidget
 from pyramid.view import view_config
 
 
-class DiscussionSchema(ContentSchema):
-    body = colander.SchemaNode(colander.String())
+#class DiscussionSchema(ContentSchema):
+    #body = colander.SchemaNode(colander.String())
 
 
-class DiscussionAddForm(AddFormView):
-    schema_factory = DiscussionSchema
-    add = Discussion
-    item_type = _(u"Discussion")
+#class DiscussionAddForm(AddFormView):
+    #schema_factory = DiscussionSchema
+    #add = Discussion
+    #item_type = _(u"Discussion")
 
 
-class DiscussionEditForm(EditFormView):
-    schema_factory = DiscussionSchema
+#class DiscussionEditForm(EditFormView):
+    #schema_factory = DiscussionSchema
 
 
 class CommentSchema(ContentSchema):
     message = colander.SchemaNode(colander.String(),
-                                  widget=TextAreaWidget(cols=40, rows=5))
+                                  widget=TextAreaWidget(cols=400, rows=5),
+                                  title=u"",
+                                  name=u"")
 
 
 class CommentAddForm(AddFormView):
@@ -48,40 +55,69 @@ class CommentAddForm(AddFormView):
 class CommentEditForm(EditFormView):
     schema_factory = CommentSchema
 
+from kotti.views.edit import DocumentSchema
+class ExtendedDocumentSchema(DocumentSchema):
+    enable_comments = colander.SchemaNode(
+        colander.Boolean(),
+        title=_(u'Enable comments'),
+        description=_(u'Check to enable comments')
+    )
+
+class ExtendedDocumentAddForm(AddFormView):
+    schema_factory = ExtendedDocumentSchema
+    item_type = _(u'Document')
+    item_class = Document
+
+
+    def add(self, **appstruct):
+        doc = self.item_class(
+            title=appstruct['title'],
+            description=appstruct['description'],
+            body=appstruct['body'],
+            tags=appstruct['tags'],
+        )
+        setattr(doc, 'enable_comments', appstruct['enable_comments'])
+        return doc
+
 
 class MessageSchema(colander.MappingSchema):
     message = colander.SchemaNode(colander.String(),
-                                  widget=TextAreaWidget(cols=200, rows=5),
-                                  title=_("Message"))
+                                  widget=TextAreaWidget(cols=400, rows=5,
+                                    style="width:40em;",
+                                    css_class="comment_message",
+                                  ))
 
-
-@view_config(name='view_comments',
-                     renderer='templates/view_comments.pt')
-def view_comments(context, request):
+@view_config(name='view_discussion',
+             renderer='templates/view_discussion.pt')
+def view_discussion(context, request):
     """ View for comments """
+    adapter = request.registry.queryAdapter(context, ICommentable)
+    if not adapter:
+        return dict(comments=None)
+
     schema = MessageSchema()
-    form = Form(schema, buttons=[Button('submit', _('Send message'))])
+    form = Form(schema, bootstrap_form_style='form-vertical',
+                buttons=[Button('submit', _('Send message'))])
     rendered_form = None
 
     if 'submit' in request.POST:
         message = request.POST['message']
 
-        # Create comment inside discussion
-        comment = Comment(
-            title=u'comment',
-            description=u'comment for discussion',
-            tags=[],
-            creation_date=datetime.datetime.now(),
-            creator=u'testi',
-            message=message
-        )
-        from kotti.util import title_to_name
-        _id = title_to_name(comment.title, blacklist=context.keys())
-        context[_id] = comment
+        # Put the comment inside discussion if there is one. Create discussion
+        # if there isn't one
+        discussion = get_discussion(context)
+        comment = create_comment_inside(discussion)
+        comment.message = message
 
+    # before render change the textarea id
+    form['message'].oid = 'kotti_discussion-textarea'
     rendered_form = form.render()
 
+    from kotti_discussion.fanstatic import kotti_discussion_group
+    kotti_discussion_group.need()
+
     adapter = request.registry.queryAdapter(context, ICommentable)
+
     comments = []
     try:
         comments = adapter.get_comments()
@@ -97,23 +133,31 @@ def view_comments(context, request):
     }
 
 
-def view_discussion(context, request):
-    return dict()
+#def view_discussion(context, request):
+    #return dict()
 
 
 def includeme_edit(config):
 
-    config.add_view(
-        DiscussionEditForm,
-        context=Discussion,
-        name='edit',
-        permission='edit',
-        renderer='kotti:templates/edit/node.pt',
-    )
+    #config.add_view(
+        #DiscussionEditForm,
+        #context=Discussion,
+        #name='edit',
+        #permission='edit',
+        #renderer='kotti:templates/edit/node.pt',
+    #)
+
+    #config.add_view(
+        #DiscussionAddForm,
+        #name='add_discussion',
+        #permission='add',
+        #renderer='kotti:templates/edit/node.pt',
+    #)
 
     config.add_view(
-        DiscussionAddForm,
-        name='add_discussion',
+        ExtendedDocumentAddForm,
+        context=Document,
+        name=Document.type_info.add_view,
         permission='add',
         renderer='kotti:templates/edit/node.pt',
     )
@@ -135,26 +179,23 @@ def includeme_edit(config):
 
 
 def includeme_view(config):
-    config.add_view(
-        view_discussion,
-        context=Discussion,
-        name='view',
-        permission='view',
-        renderer='templates/view.pt',
-    )
+    #config.add_view(
+        #view_discussion,
+        #context=Discussion,
+        #name='view',
+        #permission='view',
+        #renderer='templates/view_discussion.pt',
+    #)
 
     config.add_static_view('static-kotti_discussion', 'kotti_discussion:static')
-
 
 
 def includeme(config):
     includeme_edit(config)
     includeme_view(config)
 
-    # TODO: USE MULTI ADAPTER
     config.registry.registerAdapter(CommentableDocument, (IDocument,), ICommentable)
-    config.registry.registerAdapter(CommentableDiscussion, (IDiscussion,), ICommentable)
 
     from kotti.views.slots import assign_slot
     config.scan(__name__)
-    assign_slot('view_comments', 'belowcontent')
+    assign_slot('view_discussion', 'belowcontent')
