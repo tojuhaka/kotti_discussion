@@ -23,6 +23,7 @@ from deform import Button
 from deform import Form
 from deform.widget import TextAreaWidget
 from pyramid.view import view_config
+from zope.interface import alsoProvides, noLongerProvides
 
 
 #class DiscussionSchema(ContentSchema):
@@ -76,9 +77,19 @@ class ExtendedDocumentAddForm(AddFormView):
             body=appstruct['body'],
             tags=appstruct['tags'],
         )
-        setattr(doc, 'enable_comments', appstruct['enable_comments'])
-        return doc
 
+        if appstruct['enable_comments']:
+            alsoProvides(doc, ICommentable)
+        else:
+            noLongerProvides(doc, ICommentable)
+        return Document
+
+class ExtendedDocumentEditForm(EditFormView):
+    schema_factory = ExtendedDocumentSchema
+
+    def edit(self, **appstruct):
+        # TODO: Continue
+        import pdb; pdb.set_trace()
 
 class MessageSchema(colander.MappingSchema):
     message = colander.SchemaNode(colander.String(),
@@ -91,8 +102,9 @@ class MessageSchema(colander.MappingSchema):
              renderer='templates/view_discussion.pt')
 def view_discussion(context, request):
     """ View for comments """
-    adapter = request.registry.queryAdapter(context, ICommentable)
-    if not adapter:
+    try:
+        adapter = ICommentable(context)
+    except TypeError:
         return dict(comments=None)
 
     schema = MessageSchema()
@@ -158,6 +170,14 @@ def includeme_edit(config):
         ExtendedDocumentAddForm,
         context=Document,
         name=Document.type_info.add_view,
+        permission='add',
+        renderer='kotti:templates/edit/node.pt',
+    )
+
+    config.add_view(
+        ExtendedDocumentEditForm,
+        context=Document,
+        name='edit',
         permission='add',
         renderer='kotti:templates/edit/node.pt',
     )
