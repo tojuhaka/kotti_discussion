@@ -19,7 +19,8 @@
               <p tal:content="comment.message" />
             </div>
         </div>
-        </tal:comments>
+      </tal:comments>
+      </div>
     </div>
     <div id="kotti_discussion-message_form" tal:condition="form">
         <div class="row">
@@ -31,5 +32,4 @@
             </div>
         </div>
       </div>
-    </div>
 </html>

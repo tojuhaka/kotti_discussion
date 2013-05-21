@@ -77,19 +77,35 @@ class ExtendedDocumentAddForm(AddFormView):
             body=appstruct['body'],
             tags=appstruct['tags'],
         )
+        return doc
 
-        if appstruct['enable_comments']:
-            alsoProvides(doc, ICommentable)
-        else:
-            noLongerProvides(doc, ICommentable)
-        return Document
+    def save_success(self, appstruct):
+        appstruct.pop('csrf_token', None)
+        name = self.find_name(appstruct)
+        new_item = self.context[name] = self.add(**appstruct)
+        self.request.session.flash(self.success_message, 'success')
+        location = self.success_url or self.request.resource_url(new_item)
+
+        alsoProvides(self.context[name], ICommentable)
+        from pyramid.httpexceptions import HTTPFound
+        import pdb; pdb.set_trace()
+        return HTTPFound(location=location)
+
 
 class ExtendedDocumentEditForm(EditFormView):
     schema_factory = ExtendedDocumentSchema
 
     def edit(self, **appstruct):
-        # TODO: Continue
-        import pdb; pdb.set_trace()
+        if appstruct['enable_comments']:
+            print "ENABLE COMMENTS"
+            self.context.enable_comments = appstruct['enable_comments']
+            alsoProvides(self.context, ICommentable)
+        else:
+            print "DISABLE COMMENTS"
+            noLongerProvides(self.context, ICommentable)
+        for k, v in appstruct.items():
+            setattr(self.context, k, v)
+
 
 class MessageSchema(colander.MappingSchema):
     message = colander.SchemaNode(colander.String(),
@@ -111,7 +127,7 @@ def view_discussion(context, request):
     form = Form(schema, bootstrap_form_style='form-vertical',
                 buttons=[Button('submit', _('Send message'))])
     rendered_form = None
-
+    import pdb; pdb.set_trace()
     if 'submit' in request.POST:
         message = request.POST['message']
 
@@ -143,10 +159,6 @@ def view_discussion(context, request):
         'body': context.body,  # this can be called directly in the template as example_text
         'gravatar_url': get_avatar_image('tojuhaka@gmail.com')
     }
-
-
-#def view_discussion(context, request):
-    #return dict()
 
 
 def includeme_edit(config):
