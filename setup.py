@@ -8,6 +8,8 @@ project = 'kotti_discussion'
 
 install_requires=[
         'Kotti',
+        'kotti_settings',
+        'deform_boostrap'
     ],
 
 here = os.path.abspath(os.path.dirname(__file__))
